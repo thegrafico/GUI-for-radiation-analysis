@@ -90,13 +90,18 @@ class Analyze_arg():
 		return pd.DataFrame(dt)
 		
 	#===========================================================================================================   
-
+def create_dummy_data():
+	x = np.random.randint(low=30, high=50, size=100))
+	y = np.random.normal(size=100)
+	
 
 data = Analyze_arg()
 data.start('DUMMY2.txt')
 df = data.create_data_frame()
 
 print(df)
+
+create_dummy_data()
 
 #next steps:
 #write code to store all the 36 vals, 40vals, and 40/36 vals all in one new text file

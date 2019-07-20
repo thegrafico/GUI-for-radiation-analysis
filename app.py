@@ -10,24 +10,25 @@ class Analyze_arg():
 	def __init__(self):
 		self.ar36 = []
 		self.ar40 = []
+		self.file_names = []
 
 	#===========================================================================================================
-	def start(self, fname):
+	def start(self, path, fname):
 		self.fname = fname
+		self.file_names.append(fname)
 		"""
 		start the analysis
 		"""
 		v = []
-		with open(self.fname, "r+") as f:
+		with open(path + self.fname, "r+") as f:
 			instrm = f.read().strip()
 			
-		instrm = self.get_heading(instrm)
+		#instrm = self.get_heading(instrm)
 		instrm = instrm.strip()
 		instrm = instrm.split('\n')
 		
 		for i in range(len(instrm)):
 			v.append(instrm[i].replace(',','').split())
-		
 		#print('FLAG1')
 		self.highest(v)
 	#===========================================================================================================
@@ -72,7 +73,7 @@ class Analyze_arg():
 				self.ar36.append(line)
 			else:
 				self.ar40.append(line)
-		print('FLAG3')
+		# print('FLAG3')
 
 	#===========================================================================================================
 	def get_heading(self, text_file):
@@ -83,25 +84,47 @@ class Analyze_arg():
 	def create_data_frame(self):
 		columns = ['File', 'Ar_36', 'Ar_40']
 		dt = {
-		columns[0]: self.fname,
+		columns[0]: self.file_names,
 		columns[1]: self.ar36,
 		columns[2]: self.ar40
 			}
 		return pd.DataFrame(dt)
+	
+	def get_all_files(self, path):
+		files = os.listdir(path)
+		files = list(filter(lambda x: x[-4:] == '.txt', files))
+		return files
 		
 	#===========================================================================================================   
-def create_dummy_data():
-	x = np.random.randint(low=30, high=50, size=100))
-	y = np.random.normal(size=100)
-	
+def create_dummy_data(n_files):
+	"""
+	create dummy data
+	n_files: number of file to create
+	"""
+	tam = 300
+	for i in range(n_files):
+		filename = '.\data\\' + str(i)+ '.txt'
+		x = np.random.randint(low=30, high=50, size=tam)
+		y = np.random.normal(size=tam)
+		with open(filename, 'w+') as f:
+			for position in range(tam):		
+				pattern = str(x[position]) + ', ' + str(y[position]) + ','
+				f.write(pattern + '\n')
+
+#create_dummy_data(10)
+#=====================================================================================
 
 data = Analyze_arg()
-data.start('DUMMY2.txt')
+
+path = '.\data\\'
+files = data.get_all_files(path)
+
+for f in files:
+	data.start(path,f)
+
 df = data.create_data_frame()
 
 print(df)
-
-create_dummy_data()
 
 #next steps:
 #write code to store all the 36 vals, 40vals, and 40/36 vals all in one new text file
@@ -111,8 +134,6 @@ create_dummy_data()
 
 
 """
-
-
 	#===========================================================================================================
 	def go2(x):
 		v = []

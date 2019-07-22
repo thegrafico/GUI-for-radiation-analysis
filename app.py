@@ -1,6 +1,6 @@
 # brief program description
 import os
-import statistics      #used to calculate the standard deviation
+import statistics as st    #used to calculate the standard deviation
 import pandas as pd
 import numpy as np
 
@@ -8,8 +8,11 @@ import numpy as np
 class Analyze_arg():
 	
 	def __init__(self):
-		self.ar36 = []
-		self.ar40 = []
+		self.ar36x = []
+		self.ar36y = []
+
+		self.ar40x = []
+		self.ar40y = []
 		self.file_names = []
 
 	#===========================================================================================================
@@ -66,13 +69,17 @@ class Analyze_arg():
 	#to write values into a text file. Need them to list all from line to line rather than updating it    
 	def create_a_file(self, results, do_ar36):
 		for result in results:
-			a = str(result[0])
-			b = str(result[1])
-			line = a + ', ' + b
+			a = result[0]
+			b = result[1]
+			# line = a + ', ' + b
 			if do_ar36:
-				self.ar36.append(line)
+				self.ar36x.append(a)
+				self.ar36y.append(b)
+
 			else:
-				self.ar40.append(line)
+				self.ar40x.append(a)
+				self.ar40y.append(b)
+
 		# print('FLAG3')
 
 	#===========================================================================================================
@@ -82,12 +89,14 @@ class Analyze_arg():
 		
 	#===========================================================================================================   
 	def create_data_frame(self):
-		columns = ['File', 'Ar_36', 'Ar_40']
+		columns = ['File', 'Ar_36_x','Ar_36_y', 'Ar_40_x','Ar_40_y']
 		dt = {
 		columns[0]: self.file_names,
-		columns[1]: self.ar36,
-		columns[2]: self.ar40
-			}
+		columns[1]: self.ar36x,
+		columns[2]: self.ar36y,
+		columns[3]: self.ar40x,
+		columns[4]: self.ar40y
+		}
 		return pd.DataFrame(dt)
 	
 	def get_all_files(self, path):
@@ -124,7 +133,20 @@ for f in files:
 
 df = data.create_data_frame()
 
+
+df['Ar_40_y'] = df['Ar_40_y'].astype('float64')
+df['Ar_36_y'] = df['Ar_36_y'].astype('float64') 
+df['Ar40_div_Ar36'] = df['Ar_40_y'] /  df['Ar_36_y']
+
+
+
+std_columns = ['Ar_36_x', 'Ar_36_y', 'Ar_40_x', 'Ar_40_y', 'Ar40_div_Ar36']
+
 print(df)
+print()
+for col in std_columns:
+	std = st.stdev(df[col])
+	print('STD',col,'=',std)
 
 #next steps:
 #write code to store all the 36 vals, 40vals, and 40/36 vals all in one new text file

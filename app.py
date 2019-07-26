@@ -26,7 +26,7 @@ class Analyze_arg():
 		with open(path + self.fname, "r+") as f:
 			instrm = f.read().strip()
 			
-		#instrm = self.get_heading(instrm)
+		instrm = self.get_heading(instrm)
 		instrm = instrm.strip()
 		instrm = instrm.split('\n')
 		
@@ -84,8 +84,9 @@ class Analyze_arg():
 
 	#===========================================================================================================
 	def get_heading(self, text_file):
-		end = text_file.find("mAmps")
-		return text_file[end + 5:]
+		finish = 'mAmps'
+		end = text_file.find(finish)
+		return text_file[end + len(finish):]
 		
 	#===========================================================================================================   
 	def create_data_frame(self):
@@ -133,14 +134,16 @@ for f in files:
 
 df = data.create_data_frame()
 
+from decimal import *
 
 df['Ar_40_y'] = df['Ar_40_y'].astype('float64')
 df['Ar_36_y'] = df['Ar_36_y'].astype('float64') 
-df['Ar40_div_Ar36'] = df['Ar_40_y'] /  df['Ar_36_y']
+df['Y_axis_Ar40_div_Ar36'] = df['Ar_40_y'] /  df['Ar_36_y']
 
+r = Decimal(7.450000e-10) / Decimal(2.380000e-09)
+print(r) 
 
-
-std_columns = ['Ar_36_x', 'Ar_36_y', 'Ar_40_x', 'Ar_40_y', 'Ar40_div_Ar36']
+std_columns = ['Ar_36_x', 'Ar_36_y', 'Ar_40_x', 'Ar_40_y', 'Y_axis_Ar40_div_Ar36']
 
 print(df)
 print()

@@ -3,6 +3,7 @@ import os
 import statistics as st    #used to calculate the standard deviation
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class Analyze_arg():
@@ -63,8 +64,6 @@ class Analyze_arg():
 		self.create_a_file(results_ar40, do_ar36=False)
 	#===========================================================================================================
 
-
-
 	####################################################To write into an export file and calculate standerd deeviation##################################################################################
 	#to write values into a text file. Need them to list all from line to line rather than updating it    
 	def create_a_file(self, results, do_ar36):
@@ -79,9 +78,6 @@ class Analyze_arg():
 			else:
 				self.ar40x.append(a)
 				self.ar40y.append(b)
-
-		# print('FLAG3')
-
 	#===========================================================================================================
 	def get_heading(self, text_file):
 		finish = 'mAmps'
@@ -105,7 +101,37 @@ class Analyze_arg():
 		files = list(filter(lambda x: x[-4:] == '.txt', files))
 		return files
 		
+	def make_calculation(self, df):
+			
+		df['Ar_40_y'] = df['Ar_40_y'].astype('float64')
+		df['Ar_36_y'] = df['Ar_36_y'].astype('float64') 
+		df['Y_axis_Ar40_div_Ar36'] = df['Ar_40_y'] /  df['Ar_36_y']
+
+		std_columns = ['Ar_36_x', 'Ar_36_y', 'Ar_40_x', 'Ar_40_y', 'Y_axis_Ar40_div_Ar36']
+
+		df.to_csv('result.txt', header=True, index=False, sep='\t', mode='a')
+		
+		# result = []
+		# for col in std_columns:
+		# 	result.append( [col, st.stdev(df[col]] ))
+		# 	# print('STD',col,'=',std)
+		# return result
 	#===========================================================================================================   
+	def make_plot(self, df, column):
+		# x = df['Ar_36_x'].values
+		y = df['Ar_36_y'].values
+
+		# print(x, y)
+		_ = plt.boxplot(y)
+		plt.xlabel('Pressure')
+		plt.ylabel('Counts')
+		plt.title('Pressure vs Counts')
+		plt.xticks(rotation=45)
+		plt.xscale('log')
+		plt.grid(True)
+		plt.savefig('image.png')
+	#===========================================================================================================   
+
 def create_dummy_data(n_files):
 	"""
 	create dummy data
@@ -124,60 +150,20 @@ def create_dummy_data(n_files):
 #create_dummy_data(10)
 #=====================================================================================
 
-data = Analyze_arg()
+if __name__ == '__main__':
+		
+	data = Analyze_arg()
 
-path = '.\data\\'
-files = data.get_all_files(path)
+	# path = '.\data\\'
+	path = '.\F350\\'
 
-for f in files:
-	data.start(path,f)
+	files = data.get_all_files(path)
 
-df = data.create_data_frame()
+	for f in files:
+		data.start(path,f)
 
-from decimal import *
+	df = data.create_data_frame()
 
-df['Ar_40_y'] = df['Ar_40_y'].astype('float64')
-df['Ar_36_y'] = df['Ar_36_y'].astype('float64') 
-df['Y_axis_Ar40_div_Ar36'] = df['Ar_40_y'] /  df['Ar_36_y']
+	data.make_calculation(df)
 
-r = Decimal(7.450000e-10) / Decimal(2.380000e-09)
-print(r) 
-
-std_columns = ['Ar_36_x', 'Ar_36_y', 'Ar_40_x', 'Ar_40_y', 'Y_axis_Ar40_div_Ar36']
-
-print(df)
-print()
-for col in std_columns:
-	std = st.stdev(df[col])
-	print('STD',col,'=',std)
-
-#next steps:
-#write code to store all the 36 vals, 40vals, and 40/36 vals all in one new text file
-#write the output file elements into a list to run the standerd deviation command through
-#set up a designated directory to collect the data from automatically using timestamps
-#begin working on interface
-
-
-"""
-	#===========================================================================================================
-	def go2(x):
-		v = []
-		colm2=0
-		with open(x, "r+") as f:
-			instrm = f.read().strip()
-		instrm=instrm.split('\n')
-		for i in range(len(instrm)):
-			v.append(instrm[i].replace(',','').split())
-		highest2(v) 
-
-	#===========================================================================================================    
-	def highest2(a):
-		x = [float(col[0]) for col in a]
-		y= [float(colm1[1]) for colm1 in a]
-		print(x)
-		print(y)
-	 
-"""
-
-            
-
+	data.make_plot(df)

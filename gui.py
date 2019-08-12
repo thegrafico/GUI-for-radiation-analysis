@@ -1,0 +1,271 @@
+from tkinter import *
+from tkinter import ttk
+from tkinter import filedialog
+from tkinter import messagebox as msg_box
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from app import Analyze_arg
+import pandas as pd
+import numpy as np
+import statistics as st
+import os
+from tkinter import simpledialog
+
+class Root(Tk):
+    def __init__(self):
+        super(Root, self).__init__()
+        self.code = Analyze_arg()
+        self.title('UGA analysis')
+        self.width = self.winfo_screenwidth()
+        self.height = self.winfo_screenheight()
+        self.minsize(self.width,self.height)
+        # self.resizable(width=0, height=0)
+        self.maindir = os.path.dirname(os.path.realpath(__file__))
+        # self.wm_iconbitmap(self.maindir + '\\' + 'rad.ico')
+        self.std_logfolder = 'std_log.txt'
+        self._create_folders()
+        self.show_menu()
+        self.standar_table()
+        self.table()    
+#============================================================================   
+    def _create_folders(self):
+        """
+        Create a directory if dosen't exits
+        """
+        directory = self.maindir + '\\stdlog\\'
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+#============================================================================   
+    def button(self):
+        """
+        Browse a file into the user directory interface
+        """
+        self.button = ttk.Button(self.labelFrame, text='Browse A File', command=self.fileDialog)
+        self.button.grid(column=1, row=1)
+#============================================================================   
+    def fileDialog(self):
+        """
+        option to select the folder to work
+        """
+        self.filepath = filedialog.askdirectory(initialdir='/', title='Select A File', mustexist=False)
+
+        if self.filepath and self.filepath != '':
+            files = self.code.get_all_files(self.filepath)
+            self.do_analysis(self.filepath + '/', files)
+            self.fill_std()
+            self.matplotlib_canvas()
+           
+#============================================================================   
+    def donothing(self):
+        filewin = Toplevel(self)
+        self.button = Button(filewin, text="Do nothing button")
+        self.button.pack()
+
+    def show_menu(self):
+        # root = Tk()
+        menubar = Menu(self)
+
+        #file menu
+        filemenu = Menu(menubar, tearoff=0)
+        filemenu.add_command(label="New", command=self.donothing)
+        filemenu.add_command(label="Select Folder", command=self.fileDialog)
+        filemenu.add_command(label="Save", command=self.donothing)
+        filemenu.add_command(label="Save as...", command=self.donothing)
+        filemenu.add_command(label="Close", command=self.donothing)
+        filemenu.add_separator()
+        filemenu.add_command(label="Exit", command=self.quit)
+        menubar.add_cascade(label="File", menu=filemenu)
+
+        #Options menu
+        editmenu = Menu(menubar, tearoff=0)
+        editmenu.add_command(label="Remove std values", command=self.donothing)
+        editmenu.add_command(label="Select New Range", command=self.popup_input)
+        menubar.add_cascade(label="options", menu=editmenu)
+
+        #help menu
+        helpmenu = Menu(menubar, tearoff=0)
+        helpmenu.add_command(label="Help Index", command=self.donothing)
+        helpmenu.add_command(label="About...", command=self.donothing)
+        menubar.add_cascade(label="Help", menu=helpmenu)
+
+        self.config(menu=menubar)
+#============================================================================   
+    def do_analysis(self, path, files):
+        """
+        Calculate the std for all columns
+        """
+        for f in files:
+	        self.code.start(path,f)
+
+        self.df = self.code.create_data_frame()
+        
+        self.ratio = self.get_ratio()
+        self.fill_values_table()
+        
+        self.code.make_calculation(self.df)
+# #============================================================================   
+    def fill_values_table(self):
+        # File,Ar_36_x,Ar_36_y,Ar_40_x,Ar_40_y,Y_axis_Ar40_div_Ar36
+        values = list(zip(self.df['File'].values, self.df['Ar_36_x'].values,
+        self.df['Ar_36_y'].values, self.df['Ar_40_x'].values,
+        self.df['Ar_40_y'].values, self.ratio))
+     
+        for i, (filename, ar36x, ar36y, ar40x, ar40y, ratio) in enumerate(values, start=1):
+            self.listBox.insert("", "end", values=(filename, ar36x, ar36y, ar40x, ar40y, "{:.2e}".format(ratio)))
+
+    def fill_std(self):
+        # File,Ar_36_x,Ar_36_y,Ar_40_x,Ar_40_y,Y_axis_Ar40_div_Ar36
+        cols =  ['Ar_36_x', 'Ar_36_y', 'Ar_40_x', 'Ar_40_y', 'Ratio(Ar36_y / Ar40_y)']
+        std = self.calculate_std(cols)
+        name = self.get_name(self.filepath.strip())
+        self.stdBox.insert("", "end", values=(name, "{:.2e}".format(std[0]), "{:.2e}".format(std[1]), "{:.2e}".format(std[2]),
+         "{:.2e}".format(std[3]), "{:.2e}".format(std[4])))
+        self.save_std_log(name, std)
+
+    def table(self):
+        """
+        Table of values from directory
+        """
+        label = Label(self, text="Values", font=("Arial",30)).pack()
+        # create Treeview with 3 columns
+        cols = ('File', 'Ar36_x', 'Ar36_y', 'Ar40_x', 'Ar40_y', 'Ratio(Ar36_y / Ar40_y)')
+
+        self.listBox = ttk.Treeview(self, columns=cols, show='headings')  
+        self.listBox.pack()
+        vsb = ttk.Scrollbar(self, orient="vertical", command=self.listBox.yview)
+        # vsb.pack(side='top', fill='y')
+        tam = self.width//(len(cols)+1)
+        vsb.place(x=self.width - 130, y=self.height // 16, height=self.height // 4)
+        self.listBox.configure(yscrollcommand=vsb.set)
+
+        
+        # set column headings
+        for i,col in enumerate(cols):
+            self.listBox.heading(col, text=col)
+            self.listBox.column(str(i), width=(self.width//(len(cols)+1)), anchor='c')    
+        
+
+        # showScores = ttk.Button(self, text="Show scores", width=15, command=self.fill_values_table).grid(row=4, column=0)
+        # closeButton = ttk.Button(self, text="Close", width=15, command=exit).grid(row=4, column=1)
+# #============================================================================   
+    def matplotlib_canvas(self):
+        """
+        Create the grapth to show into the GUI
+        """
+        f = Figure(figsize=(7,7), dpi=70)
+        names = self.get_files_names()
+        index1, index2 = len(self.df['File'].values) // 2, len(self.df['File'].values) -1
+        #fig 1
+        a = f.add_subplot(211)
+        a.plot(self.df['File'].values, self.ratio )
+        a.set_xticks([0,index1, index2])
+        a.set_xticklabels([names[0], names[index1],names[index2]])
+        a.set_xlabel('Time')
+        a.set_title('Time vs Ratio')
+        a.set_ylabel('Ratio')
+        # #fig 2
+        b = f.add_subplot(212)
+        b.hist(self.ratio)
+        b.set_title('Ratio frequency')
+        b.set_xlabel('Ratio (Ar36_y / Ar40_y)')
+        b.set_ylabel('Counts')
+        b.set_xscale('log') 
+        
+        f.tight_layout()
+        canvas = FigureCanvasTkAgg(f,self)
+        canvas.draw()
+        canvas.get_tk_widget().place(x=self.width//1.7, y=self.height//3)
+    # #============================================================================   
+    def calculate_std(self, col):
+        """
+        Calculate the standard deviation 
+        """
+        result = []
+        for x in col:
+            result.append(st.stdev(self.df[x].values))
+        # print(result)
+        return result
+# #============================================================================   
+    def standar_table(self):
+
+        # create Treeview with 3 columns
+        cols = ('Folder', 'Ar36_x', 'Ar36_y', 'Ar40_x', 'Ar40_y', 'Ratio(Ar36_y / Ar40_y)')
+        # set column headings
+        label = Label(self, text="Standard Deviation", font=("Arial",30)).place(x= self.width//(len(cols)+3), y =self.height//2.8)
+
+        self.stdBox = ttk.Treeview(self, columns=cols, show='headings')  
+        self.stdBox.place(x=20, y=self.height//2.4)
+
+        for i,col in enumerate(cols):
+            self.stdBox.heading(col, text=col)
+            if i == 0:
+                self.stdBox.column(str(i), width=(self.width//(len(cols)+10)), anchor='c')    
+            else:
+                self.stdBox.column(str(i), width=(self.width//(len(cols)+5)), anchor='c') 
+        
+        showScores = ttk.Button(self, text="Load STD", width=15, command=self.load_std_from_log).place(x=self.width//2.5, y=self.height //1.45)
+# #============================================================================   
+    def load_std_from_log(self):
+        """
+        load all std from log files and display into the table STD in the GUI
+        """
+        try:
+            with open(self.maindir + '\\stdlog\\' + self.std_logfolder, 'r+') as f:
+                info = f.read().strip().split('\n')
+        except:
+            self.message_box('Missing file', 'Log file not found')
+            return
+        data = []
+        for v in info:
+            data.append(v.split(','))
+        for v in data:
+            self.stdBox.insert("", "end", values=(v[0], v[1], v[2], v[3], v[4]))
+
+# #============================================================================   
+    def get_name(self, pathdir):
+        """
+        Get the name of the folder that we are analyzing
+        """
+        name = []
+        for i in range(len(pathdir) - 1, 0, -1):
+            if pathdir[i] == '/' or pathdir[i]=='\\':
+                break
+            else:
+                name.append(pathdir[i])
+        return "".join(name[::-1])
+# #============================================================================       
+    def save_std_log(self, filename, std):   
+        with open(self.maindir + '\\stdlog\\' + self.std_logfolder, 'a+') as f:
+            f.write(filename + ',')
+            for value in std:
+                f.write(str(value) +',')
+            f.write('\n')
+            print('std was saved')
+# #============================================================================   
+    def message_box(self, title, mesj):
+        msg_box.showinfo(title, mesj)
+
+    def warning_box(self, title, mesj):
+        msg_box.showwarning(title, mesj)
+
+    def error_box(self, title, mesj):
+        msg_box.showerror(title, mesj)
+# #============================================================================   
+    def popup_input(self):
+        answer = simpledialog.askstring("\nInput", "Please Enter the range.\nFormat: start:end (Eg. 36:40)\n", parent=self)
+        print(answer, type(answer))
+# #============================================================================   
+    def get_ratio(self):
+        self.df['Ratio(Ar36_y / Ar40_y)'] = self.df['Ar_36_y'] / self.df['Ar_40_y']
+        return self.df['Ratio(Ar36_y / Ar40_y)'].values 
+# #============================================================================   
+    def get_files_names(self):
+        names = []
+        for filename in self.df['File']:
+            names.append(filename[-15:-4])
+        return names
+# #============================================================================   
+if __name__ == '__main__':
+    root = Root()
+    root.mainloop()

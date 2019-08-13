@@ -2,13 +2,14 @@ from tkinter import *
 import sys
 sys.path.insert(1, './scrits')
 from tkinter import ttk
+from tkinter.ttk import *
 from tkinter import filedialog
 from tkinter import messagebox as msg_box
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-from app import Analyze_arg
 import clean_data
+import make_analysis as mk
 import pandas as pd
 import numpy as np
 import os
@@ -17,11 +18,10 @@ from tkinter import simpledialog
 class Root(Tk):
 	def __init__(self):
 		super(Root, self).__init__()
-		self.code = Analyze_arg()
 		self.title('IMS Data Analisys')
-		self.width = self.winfo_screenwidth()
+		self.width = self.winfo_screenwidth() - 100
 		self.height = self.winfo_screenheight()
-		self.minsize(self.width - 100 ,self.height)
+		self.minsize(self.width, self.height)
 		#self.maxsize(self.width //2,self.height//2)
 		
 		self.filepath = ''
@@ -30,20 +30,26 @@ class Root(Tk):
 		
 		#self.resizable(width=0, height=0)
 		self.maindir = os.path.dirname(os.path.realpath(__file__))
+		self._create_folders()
 		#self.wm_iconbitmap(self.maindir + '/' + 'rad.ico')
 		self.std_logfolder = 'std_log.txt'
 		#self._create_folders()
 		self.show_menu()
-		#self.standar_table()
+		
+		self.run_one_time = True
 		self.table()
+		#self.standar_table()
+		#self.table()
 #============================================================================   
 	def _create_folders(self):
 		"""
 		Create a directory if dosen't exits
 		"""
-		directory = self.maindir + '\\stdlog\\'
-		if not os.path.exists(directory):
-			os.makedirs(directory)
+		directorys = ["/data_to_analyze","/report_autoSaint" ]	
+		for d in directorys:
+			direc = self.maindir + d
+			if not os.path.exists(direc):
+				os.makedirs(direc)
 #============================================================================   
 	def button(self):
 		"""
@@ -75,11 +81,34 @@ class Root(Tk):
 		self.ctbt_reports = filedialog.askdirectory(initialdir='/home', title='Select Folder with CTBTO reports', mustexist=False)	
 		if self.ctbt_reports and self.ctbt_reports != '':
 			self.activate_pipeline()
-	
+#===================================ACTIVATE THE PIPELINE=========================================
 	def activate_pipeline(self):
-		if self.filepath and self.rrr_report and self.ctbt_reports:
-			print("Activating")
-			clean_data.start(self.maindir, self.rrr_report, self.filepath ,self.ctbt_reports)
+		if self.run_one_time:
+			self.show_label(" ")
+			self.excel_file_name = "clean.xlsx"
+			self.df = mk.start_analysis(self.excel_file_name, self.maindir)
+			self.table()
+			if self.filepath and self.rrr_report and self.ctbt_reports:
+				##Step1
+				#self.progress_bar("Analyzing data...")
+				#self.incremment_bar(20)
+				#clean_data.step1(self.maindir, self.rrr_report, self.filepath , self.ctbt_reports, self.excel_file_name)
+				
+				##Generating reports
+				#self.update_label("Generating reports...")
+				#self.incremment_bar(40)
+				#clean_data.step2(self.maindir, self.rrr_report, self.ctbt_reports)
+				
+				#analyze reports
+				self.incremment_bar(80)
+				self.update_label("Comparing reports...")
+				mk.start_analysis(self.excel_file_name)
+				
+				##END
+				self.incremment_bar(100)
+				self.update_label("Done!")
+			print("DONE")
+			self.run_one_time = False
 #============================================================================
 	def donothing(self):
 		filewin = Toplevel(self)
@@ -87,6 +116,22 @@ class Root(Tk):
 		self.button.pack()
 #============================================================================
 
+	def show_label(self, texto):
+		self.progress_label = ttk.Label(self, text=texto, font=("Arial",30))
+		self.progress_label.pack()
+		
+	def progress_bar(self):		
+		self.progress = Progressbar(self,orient=HORIZONTAL,length= self.width // 3, mode='determinate')
+		self.progress.place(x=(self.width // 2) - (self.width // 3) // 2, y= self.height - (self.height * 0.9) )
+	
+	def incremment_bar(self, increment):
+		self.progress['value']=increment
+		self.update_idletasks()
+	
+	def update_label(self, texto):
+		self.progress_label.configure(text=texto)
+		self.progress_label.update()
+#============================================================================
 	def show_menu(self):
 		# root = Tk()
 		menubar = Menu(self)
@@ -96,8 +141,6 @@ class Root(Tk):
 		filemenu.add_command(label="Select RRR report", command=self.select_rrr_report)
 		filemenu.add_command(label="Select Directory with raw data", command=self.select_directory)
 		filemenu.add_command(label="Select Directory with reports CTBTO", command=self.select_ctbt_report)
-		filemenu.add_command(label="Save as...", command=self.donothing)
-		filemenu.add_command(label="Close", command=self.donothing)
 		filemenu.add_separator()
 		filemenu.add_command(label="Exit", command=self.quit)
 		menubar.add_cascade(label="File", menu=filemenu)
@@ -116,19 +159,19 @@ class Root(Tk):
 
 		self.config(menu=menubar)
 #============================================================================   
-	def do_analysis(self, path, files):
-		"""
-		Calculate the std for all columns
-		"""
-		for f in files:
-			self.code.start(path,f)
+	#def do_analysis(self, path, files):
+		#"""
+		#Calculate the std for all columns
+		#"""
+		#for f in files:
+			#self.code.start(path,f)
 
-		self.df = self.code.create_data_frame()
+		#self.df = self.code.create_data_frame()
 		
-		self.ratio = self.get_ratio()
-		self.fill_values_table()
+		#self.ratio = self.get_ratio()
+		#self.fill_values_table()
 		
-		self.code.make_calculation(self.df)
+		#self.code.make_calculation(self.df)
 # #============================================================================   
 	def fill_values_table(self):
 		# File,Ar_36_x,Ar_36_y,Ar_40_x,Ar_40_y,Y_axis_Ar40_div_Ar36
@@ -138,7 +181,7 @@ class Root(Tk):
 	 
 		for i, (filename, ar36x, ar36y, ar40x, ar40y, ratio) in enumerate(values, start=1):
 			self.listBox.insert("", "end", values=(filename, ar36x, ar36y, ar40x, ar40y, "{:.2e}".format(ratio)))
-
+# #============================================================================   
 	def fill_std(self):
 		# File,Ar_36_x,Ar_36_y,Ar_40_x,Ar_40_y,Y_axis_Ar40_div_Ar36
 		cols =  ['Ar_36_x', 'Ar_36_y', 'Ar_40_x', 'Ar_40_y', 'Ratio(Ar36_y / Ar40_y)']
@@ -147,32 +190,40 @@ class Root(Tk):
 		self.stdBox.insert("", "end", values=(name, "{:.2e}".format(std[0]), "{:.2e}".format(std[1]), "{:.2e}".format(std[2]),
 		 "{:.2e}".format(std[3]), "{:.2e}".format(std[4])))
 		self.save_std_log(name, std)
-
+# #============================================================================   
 	def table(self):
 		"""
 		Table of values from directory
 		"""
-		label = Label(self, text="Values", font=("Arial",30)).pack()
+		self.show_label(" ")
+		self.update_label("Results")
+		#label = Label(self, text="Values", font=("Arial",30)).pack()
 		# create Treeview with 3 columns
-		cols = ('File', 'Ar36_x', 'Ar36_y', 'Ar40_x', 'Ar40_y', 'Ratio(Ar36_y / Ar40_y)')
+		
+		columns = ["Station ID", "Nuclide", "Conc. (uBq/m3)", "Station Location", "SID",
+		 "ENERGY", "CENTROID", "FWHM", "AREA", "AREA_ERR", "DET", "EFFICIENCY", "EFF_ERROR",
+		 "NAME", "KEY_ACTIV","ERR", "AVE_ACTIV", "ERR_", "MIN_MDA"]
+		cols = columns
 
 		self.listBox = ttk.Treeview(self, columns=cols, show='headings')  
-		self.listBox.pack()
+		self.listBox.place(x=self.width * 0.02, y= self.height * 0.05,
+		 width= self.width - (self.width * 0.04), height = self.height - (self.height * 0.20))
+		
+		#Scroolbar
 		vsb = ttk.Scrollbar(self, orient="vertical", command=self.listBox.yview)
-		# vsb.pack(side='top', fill='y')
-		tam = self.width//(len(cols)+1)
-		vsb.place(x=self.width - 130, y=self.height // 16, height=self.height // 4)
-		self.listBox.configure(yscrollcommand=vsb.set)
+		vsb.place(x=self.width - (self.width * 0.02), y= self.height * 0.09, height= self.height - (self.height * 0.25))
+		
+		vsb2 = ttk.Scrollbar(self, orient="horizontal", command=self.listBox.xview)
+		vsb2.place(x=self.width * 0.02, y= self.height - (self.height * 0.15), width= self.width - (self.width * 0.04))
+		
+		
+		self.listBox.configure(yscrollcommand=vsb.set, xscrollcommand=vsb2.set)
 
 		
 		# set column headings
 		for i,col in enumerate(cols):
 			self.listBox.heading(col, text=col)
-			self.listBox.column(str(i), width=(self.width//(len(cols)+1)), anchor='c')    
-		
-
-		# showScores = ttk.Button(self, text="Show scores", width=15, command=self.fill_values_table).grid(row=4, column=0)
-		# closeButton = ttk.Button(self, text="Close", width=15, command=exit).grid(row=4, column=1)
+			self.listBox.column(str(i), width= 120 )    
 # #============================================================================   
 	def matplotlib_canvas(self):
 		"""

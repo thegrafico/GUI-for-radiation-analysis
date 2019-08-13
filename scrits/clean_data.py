@@ -183,7 +183,7 @@ class data_cleaning():
 #--Start Code
 #Columns from reports
 
-def start(maindir, argv1, argv2, argv3):
+def step1(maindir, argv1, argv2, argv3, name_file):
 	#PATH OF THE DATA THAT WE NEED
 	rrr_report = argv1
 	path_data = argv2
@@ -191,43 +191,41 @@ def start(maindir, argv1, argv2, argv3):
 	
 	print("RRR: {}, data: {}, ctbt: {}".format(rrr_report, path_data, ctbt_reports))
 	
-	##print(rrr_report, path_data, ctbt_reports)
-	#dc = data_cleaning(rrr_report)
+	#print(rrr_report, path_data, ctbt_reports)
+	dc = data_cleaning(rrr_report)
 
-	#excel_sid = dc.get_column("SID") #default is SID
+	excel_sid = dc.get_column("SID") #default is SID
 
-	##getting data from excel and txt files
-	#id_datatxt = dc.get_id_from_txt(path = path_data)
-	#id_name_from_report = dc.get_id_from_report(path_reports = ctbt_reports)
+	#getting data from excel and txt files
+	id_datatxt = dc.get_id_from_txt(path = path_data)
+	id_name_from_report = dc.get_id_from_report(path_reports = ctbt_reports)
 
-	##spliting the id_name_from_report couse is a list of list
-	#id_from_report = [int(x[0]) for x in id_name_from_report]
-	#name_of_report = [x[1] for x in id_name_from_report] 
+	#spliting the id_name_from_report couse is a list of list
+	id_from_report = [int(x[0]) for x in id_name_from_report]
+	name_of_report = [x[1] for x in id_name_from_report] 
 
-	##set true in the excel if id match
-	#df = dc.set_true_is_ids_are_equals( id_datatxt, excel_sid,'SID', 'id_in_data')
-	#df = dc.set_true_is_ids_are_equals( id_from_report, excel_sid,'SID', 'id_in_report')
+	#set true in the excel if id match
+	df = dc.set_true_is_ids_are_equals( id_datatxt, excel_sid,'SID', 'id_in_data')
+	df = dc.set_true_is_ids_are_equals( id_from_report, excel_sid,'SID', 'id_in_report')
 
-	##show how many id that are in the txt, also are in the excel file
-	#print("There are", len(df.loc[df["id_in_data"] == True]), "text files to analyze")
-	#print("There are", len(df.loc[df["id_in_report"] == True]), "Reports files to analyze")
+	#show how many id that are in the txt, also are in the excel file
+	print("There are", len(df.loc[df["id_in_data"] == True]), "text files to analyze")
+	print("There are", len(df.loc[df["id_in_report"] == True]), "Reports files to analyze")
 
 
-	##comparing the columns id_in_report with id_in_data
-	##from this comparation we get a new dataframe with only the records when both columns are true
-	#df_clean = dc.compare(in_in_report = "id_in_report", id_in_data = "id_in_data")
+	#comparing the columns id_in_report with id_in_data
+	#from this comparation we get a new dataframe with only the records when both columns are true
+	df_clean = dc.compare(in_in_report = "id_in_report", id_in_data = "id_in_data")
 
 
 	##saving the new dataframe into a new excel file
-	#dc.save_to_excel(df_clean)
+	dc.save_to_excel(df_clean, path=maindir+"/"+name_file)
 
 
 	##convert the txt values from the new dataframe
 	#dc.convert_from_txt_to_data(path_data, id_datatxt, list(df_clean.SID))
-
-	subprocess.call('{}/.pipeline.sh'.format(maindir))
-	#os.system('source {}/.pipeline.sh'.format(maindir))
-	#os.system('run_pipeline')
+def step2(maindir, path_data, path_ctbt_reports):
+	subprocess.call('{}/.pipeline.sh {}'.format(maindir, maindir), shell=True)
 	
 
 #print(id_datatxt)

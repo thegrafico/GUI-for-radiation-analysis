@@ -1,0 +1,20 @@
+==========GUI for the analysis of the IMS stations using NDC-in-a-BOX==========
+
+
+===REQUIREMETS===
+	- CTBTO reports of the data
+	- RRR report from CTBTO
+	- Raw data from IMS stations to compare with the RRR report.
+
+
+How to run the GUI?
+	
+	1-) Open the terminal
+	
+	2-) Navigate to the folder project and open the GUI
+		*In the terminal type:
+			cd gui_ims_analysis
+			python3.6 gui.py
+			
+	3-) We have a menu in the top left of the GUI. The first option is to analyze the data
+		-We need the requirement data to analyze the data properly.

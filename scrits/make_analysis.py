@@ -96,9 +96,10 @@ def compare_MIN_MDA(excel):
 	
 	comparation = min_md >= uBq 
 	
-	excel["MIN_MD_vs_Conc.(uBq/m3)"] = comparation 
-	excel["MIN_MD_vs_Conc.(uBq/m3)"] = excel["MIN_MD_vs_Conc.(uBq/m3)"].apply(lambda x: 'EXPECTED' if x else 'WARNING')
+	excel["MDA_vs_Conc.(uBq/m3)"] = comparation 
+	excel["MDA_vs_Conc.(uBq/m3)"] = excel["MDA_vs_Conc.(uBq/m3)"].apply(lambda x: 'ABOVE' if x else 'BELOW')
 	
+	return excel
 	#print(excel["MIN_MD_vs_Conc.(uBq/m3)"])
 #----------------------------------------------------------------------
 def clean_name(names):
@@ -123,8 +124,8 @@ def clean_name(names):
 	return l
 def station_location_freq(excel):
 	
-	expected = excel['MIN_MD_vs_Conc.(uBq/m3)'] == 'EXPECTED'
-	warning = excel['MIN_MD_vs_Conc.(uBq/m3)'] == 'WARNING'
+	expected = excel['MIN_MDA_vs_Conc.(uBq/m3)'] == 'EXPECTED'
+	warning = excel['MIN_MDA_vs_Conc.(uBq/m3)'] == 'WARNING'
 	font_title = 32
 	font_letter = 30
 	#expect = excel[expected]
@@ -152,7 +153,7 @@ def station_location_freq(excel):
 def data_for_table(data_frame):
 	columns = ["Station ID", "Nuclide", "Conc. (uBq/m3)", "Station Location", "SID",
 	 "ENERGY", "CENTROID", "FWHM", "AREA", "AREA_ERR", "DET", "EFFICIENCY", "EFF_ERROR",
-	 "NAME", "KEY_ACTIV","ERR", "AVE_ACTIV", "ERR_", "MIN_MDA"]
+	 "NAME", "KEY_ACTIV","ERR", "AVE_ACTIV", "ERR_", "MIN_MDA", "MDA_vs_Conc.(uBq/m3)"]
 	return data_frame[columns]
 #----------------------------------------------------------------------
 def start_analysis(excel_name, maindir):
@@ -178,7 +179,7 @@ def start_analysis(excel_name, maindir):
 
 	get_file_raw_data(df, autosain_dir)
 	
-	compare_MIN_MDA(df)
+	df = compare_MIN_MDA(df)
 	
 	df.to_excel(maindir + excel_filename_after_comparte )
 	

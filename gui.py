@@ -37,7 +37,6 @@ class Root(Tk):
 		self.show_menu()
 		
 		self.run_one_time = True
-		self.table()
 		#self.standar_table()
 		#self.table()
 #============================================================================   
@@ -83,32 +82,33 @@ class Root(Tk):
 			self.activate_pipeline()
 #===================================ACTIVATE THE PIPELINE=========================================
 	def activate_pipeline(self):
+		self.excel_file_name = "clean.xlsx"
 		if self.run_one_time:
-			self.show_label(" ")
-			self.excel_file_name = "clean.xlsx"
-			self.df = mk.start_analysis(self.excel_file_name, self.maindir)
-			self.table()
 			if self.filepath and self.rrr_report and self.ctbt_reports:
-				##Step1
-				#self.progress_bar("Analyzing data...")
-				#self.incremment_bar(20)
-				#clean_data.step1(self.maindir, self.rrr_report, self.filepath , self.ctbt_reports, self.excel_file_name)
 				
-				##Generating reports
-				#self.update_label("Generating reports...")
-				#self.incremment_bar(40)
-				#clean_data.step2(self.maindir, self.rrr_report, self.ctbt_reports)
+				print("STAR ANALYSIS")
+				#Step1
+				#CLEANING THE DATA
+				self.show_label("Analyzing data...")
+				self.progress_bar()
+				self.incremment_bar(20)
+				clean_data.step1(self.maindir, self.rrr_report, self.filepath , self.ctbt_reports, self.excel_file_name)
 				
-				#analyze reports
+				#STEP2
+				#Generating reports
+				self.update_label("Generating reports...")
+				self.incremment_bar(40)
+				clean_data.step2(self.maindir, self.rrr_report, self.ctbt_reports)
+				
+				#STEP3
+				#analyzing reports
 				self.incremment_bar(80)
 				self.update_label("Comparing reports...")
-				mk.start_analysis(self.excel_file_name)
-				
-				##END
-				self.incremment_bar(100)
-				self.update_label("Done!")
-			print("DONE")
-			self.run_one_time = False
+				self.df = mk.start_analysis(self.excel_file_name, self.maindir)
+				self.update_label("Results")
+				self.table()
+				print("DONE")
+				self.run_one_time = False
 #============================================================================
 	def donothing(self):
 		filewin = Toplevel(self)
@@ -119,7 +119,7 @@ class Root(Tk):
 	def show_label(self, texto):
 		self.progress_label = ttk.Label(self, text=texto, font=("Arial",30))
 		self.progress_label.pack()
-		
+			
 	def progress_bar(self):		
 		self.progress = Progressbar(self,orient=HORIZONTAL,length= self.width // 3, mode='determinate')
 		self.progress.place(x=(self.width // 2) - (self.width // 3) // 2, y= self.height - (self.height * 0.9) )
@@ -147,8 +147,8 @@ class Root(Tk):
 
 		#Options menu
 		editmenu = Menu(menubar, tearoff=0)
-		editmenu.add_command(label="Remove std values", command=self.donothing)
-		editmenu.add_command(label="Select New Range", command=self.popup_input)
+		editmenu.add_command(label="Analyze Reports", command=self.analyze_folder_autosain)
+		editmenu.add_command(label="Save Results as excel file", command=self.popup_input)
 		menubar.add_cascade(label="options", menu=editmenu)
 
 		#help menu
@@ -159,38 +159,31 @@ class Root(Tk):
 
 		self.config(menu=menubar)
 #============================================================================   
-	#def do_analysis(self, path, files):
-		#"""
-		#Calculate the std for all columns
-		#"""
-		#for f in files:
-			#self.code.start(path,f)
-
-		#self.df = self.code.create_data_frame()
-		
-		#self.ratio = self.get_ratio()
-		#self.fill_values_table()
-		
-		#self.code.make_calculation(self.df)
-# #============================================================================   
-	def fill_values_table(self):
-		# File,Ar_36_x,Ar_36_y,Ar_40_x,Ar_40_y,Y_axis_Ar40_div_Ar36
-		values = list(zip(self.df['File'].values, self.df['Ar_36_x'].values,
-		self.df['Ar_36_y'].values, self.df['Ar_40_x'].values,
-		self.df['Ar_40_y'].values, self.ratio))
+	def fill_values_table(self, col):
+			
+		values = list(zip(self.df[col[0]].values, self.df[col[1]].values,self.df[col[2]].values,
+		self.df[col[3]].values,self.df[col[4]].values,self.df[col[5]].values,self.df[col[6]].values,
+		self.df[col[7]].values,self.df[col[8]].values, self.df[col[9]].values,self.df[col[10]].values,
+		self.df[col[11]].values,self.df[col[12]].values,self.df[col[13]].values,self.df[col[14]].values,
+		self.df[col[15]].values,self.df[col[16]].values, self.df[col[17]].values,self.df[col[18]].values, self.df[col[19]].values))
 	 
-		for i, (filename, ar36x, ar36y, ar40x, ar40y, ratio) in enumerate(values, start=1):
-			self.listBox.insert("", "end", values=(filename, ar36x, ar36y, ar40x, ar40y, "{:.2e}".format(ratio)))
-# #============================================================================   
-	def fill_std(self):
-		# File,Ar_36_x,Ar_36_y,Ar_40_x,Ar_40_y,Y_axis_Ar40_div_Ar36
-		cols =  ['Ar_36_x', 'Ar_36_y', 'Ar_40_x', 'Ar_40_y', 'Ratio(Ar36_y / Ar40_y)']
-		std = self.calculate_std(cols)
-		name = self.get_name(self.filepath.strip())
-		self.stdBox.insert("", "end", values=(name, "{:.2e}".format(std[0]), "{:.2e}".format(std[1]), "{:.2e}".format(std[2]),
-		 "{:.2e}".format(std[3]), "{:.2e}".format(std[4])))
-		self.save_std_log(name, std)
-# #============================================================================   
+		for i, (x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14,x15,x16,x17,x18,x19, x20) in enumerate(values):
+			col_tag = self.toggle_color(i)
+			
+			if x1 == "BELOW":
+				self.listBox.insert("", "end", values=(x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14,x15,x16,x17,x18,x19, x20), tags = ("warning",))
+			else:	
+				self.listBox.insert("", "end", values=(x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14,x15,x16,x17,x18,x19, x20), tags = (col_tag,))
+	
+		#self.listBox.tag_configure('oddrow', background='gray')
+		self.listBox.tag_configure('warning', background='orange')
+# #================================TABLE============================================  
+
+	def toggle_color(self, n):
+		if n%2 == 0:
+			return "evenrow"	
+		return "oddrow" 
+			 
 	def table(self):
 		"""
 		Table of values from directory
@@ -200,12 +193,11 @@ class Root(Tk):
 		#label = Label(self, text="Values", font=("Arial",30)).pack()
 		# create Treeview with 3 columns
 		
-		columns = ["Station ID", "Nuclide", "Conc. (uBq/m3)", "Station Location", "SID",
+		columns = ["MDA_vs_Conc.(uBq/m3)", "MIN_MDA", "Conc. (uBq/m3)",  "Nuclide","Station Location", "SID",
 		 "ENERGY", "CENTROID", "FWHM", "AREA", "AREA_ERR", "DET", "EFFICIENCY", "EFF_ERROR",
-		 "NAME", "KEY_ACTIV","ERR", "AVE_ACTIV", "ERR_", "MIN_MDA"]
-		cols = columns
+		 "NAME", "KEY_ACTIV","ERR", "AVE_ACTIV", "ERR_", "Station ID"]
 
-		self.listBox = ttk.Treeview(self, columns=cols, show='headings')  
+		self.listBox = ttk.Treeview(self, columns=columns, show='headings', height=20)  
 		self.listBox.place(x=self.width * 0.02, y= self.height * 0.05,
 		 width= self.width - (self.width * 0.04), height = self.height - (self.height * 0.20))
 		
@@ -221,103 +213,37 @@ class Root(Tk):
 
 		
 		# set column headings
-		for i,col in enumerate(cols):
+		for i,col in enumerate(columns):
 			self.listBox.heading(col, text=col)
-			self.listBox.column(str(i), width= 120 )    
-# #============================================================================   
-	def matplotlib_canvas(self):
-		"""
-		Create the grapth to show into the GUI
-		"""
-		f = Figure(figsize=(7,7), dpi=70)
-		names = self.get_files_names()
-		index1, index2 = len(self.df['File'].values) // 2, len(self.df['File'].values) -1
-		#fig 1
-		a = f.add_subplot(211)
-		a.plot(self.df['File'].values, self.ratio )
-		a.set_xticks([0,index1, index2])
-		a.set_xticklabels([names[0], names[index1],names[index2]])
-		a.set_xlabel('Time')
-		a.set_title('Time vs Ratio')
-		a.set_ylabel('Ratio')
-		# #fig 2
-		b = f.add_subplot(212)
-		b.hist(self.ratio)
-		b.set_title('Ratio frequency')
-		b.set_xlabel('Ratio (Ar36_y / Ar40_y)')
-		b.set_ylabel('Counts')
-		b.set_xscale('log') 
 		
-		f.tight_layout()
-		canvas = FigureCanvasTkAgg(f,self)
-		canvas.draw()
-		canvas.get_tk_widget().place(x=self.width//1.7, y=self.height//3)
-	# #============================================================================   
-	def calculate_std(self, col):
-		"""
-		Calculate the standard deviation 
-		"""
-		result = []
-		for x in col:
-			result.append(st.stdev(self.df[x].values))
-		# print(result)
-		return result
-# #============================================================================   
-	def standar_table(self):
-
-		# create Treeview with 3 columns
-		cols = ('Folder', 'Ar36_x', 'Ar36_y', 'Ar40_x', 'Ar40_y', 'Ratio(Ar36_y / Ar40_y)')
-		# set column headings
-		label = Label(self, text="Standard Deviation", font=("Arial",30)).place(x= self.width//(len(cols)+3), y =self.height//2.8)
-
-		self.stdBox = ttk.Treeview(self, columns=cols, show='headings')  
-		self.stdBox.place(x=20, y=self.height//2.4)
-
-		for i,col in enumerate(cols):
-			self.stdBox.heading(col, text=col)
-			if i == 0:
-				self.stdBox.column(str(i), width=(self.width//(len(cols)+10)), anchor='c')    
+			
+			if col == "Station Location":
+				self.listBox.column(str(i), width= 270)
+			elif col == "SID":
+				self.listBox.column(str(i), width= 80)
+			elif col == "MDA_vs_Conc.(uBq/m3)":
+				self.listBox.column(str(i), width= 150)
 			else:
-				self.stdBox.column(str(i), width=(self.width//(len(cols)+5)), anchor='c') 
+				self.listBox.column(str(i), width= 120)
+			
+		self.fill_values_table(columns)
+#============================================================================
+	def analyze_folder_autosain(self):
+		self.show_label("Analyzing Autosain Reports...")
+		self.after(1000, self.run_analysis)
 		
-		showScores = ttk.Button(self, text="Load STD", width=15, command=self.load_std_from_log).place(x=self.width//2.5, y=self.height //1.45)
-# #============================================================================   
-	def load_std_from_log(self):
-		"""
-		load all std from log files and display into the table STD in the GUI
-		"""
-		try:
-			with open(self.maindir + '\\stdlog\\' + self.std_logfolder, 'r+') as f:
-				info = f.read().strip().split('\n')
-		except:
-			self.message_box('Missing file', 'Log file not found')
-			return
-		data = []
-		for v in info:
-			data.append(v.split(','))
-		for v in data:
-			self.stdBox.insert("", "end", values=(v[0], v[1], v[2], v[3], v[4]))
-
-# #============================================================================   
-	def get_name(self, pathdir):
-		"""
-		Get the name of the folder that we are analyzing
-		"""
-		name = []
-		for i in range(len(pathdir) - 1, 0, -1):
-			if pathdir[i] == '/' or pathdir[i]=='\\':
-				break
-			else:
-				name.append(pathdir[i])
-		return "".join(name[::-1])
-# #============================================================================       
-	def save_std_log(self, filename, std):   
-		with open(self.maindir + '\\stdlog\\' + self.std_logfolder, 'a+') as f:
-			f.write(filename + ',')
-			for value in std:
-				f.write(str(value) +',')
-			f.write('\n')
-			print('std was saved')
+	def run_analysis(self):
+		run = True
+		print("Analyzing reports autosain")
+		if run:
+			self.excel_file_name = "clean.xlsx"
+			self.df = mk.start_analysis(self.excel_file_name, self.maindir)
+			self.update_label("Results")
+			self.table()
+			run = False
+			
+		print("Done with the analysis")
+		
 # #============================================================================   
 	def message_box(self, title, mesj):
 		msg_box.showinfo(title, mesj)
@@ -331,16 +257,6 @@ class Root(Tk):
 	def popup_input(self):
 		answer = simpledialog.askstring("\nInput", "Please Enter the range.\nFormat: start:end (Eg. 36:40)\n", parent=self)
 		print(answer, type(answer))
-# #============================================================================   
-	def get_ratio(self):
-		self.df['Ratio(Ar36_y / Ar40_y)'] = self.df['Ar_36_y'] / self.df['Ar_40_y']
-		return self.df['Ratio(Ar36_y / Ar40_y)'].values 
-# #============================================================================   
-	def get_files_names(self):
-		names = []
-		for filename in self.df['File']:
-			names.append(filename[-15:-4])
-		return names
 # #============================================================================   
 if __name__ == '__main__':
 	root = Root()
